@@ -16,7 +16,7 @@ public class NewMapActivity extends AppCompatActivity implements OnMapReadyCallb
     private MapView mapView;
     private GoogleMap gmap;
 
-    private static final String MAP_VIEW_BUNDLE_KEY = "AIzaSyDqKAWRDz86HJup1pHoesf3tt-bniA_WFA";
+    private static final String MAP_VIEW_BUNDLE_KEY = "Your google map key";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
