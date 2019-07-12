@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/custom_marker_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/user_dp"
+        android:layout_width="56dp"
+        android:layout_height="52dp"
+        android:layout_alignParentTop="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="36dp"
+        android:layout_marginTop="8dp"
+        android:contentDescription="@null"
+        android:src="@drawable/g1"
+        app:civ_border_color="#fff" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/marker_down"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            android:src="@drawable/left_marker"/>
+
+        <TextView
+            android:id="@+id/kmaway"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/Black"
+            android:gravity="end"
+            android:layout_marginTop="25dp"
+            android:layout_marginStart="105dp"
+            android:layout_marginLeft="105dp"
+            android:textStyle="bold"
+            android:text="1.7 KM"/>
+
+        <TextView
+            android:id="@+id/name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/marker_down"
+            android:alpha="0.8"
+            android:gravity="center"
+
+            android:layout_marginLeft="25dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingBottom="5dp"
+            android:paddingTop="5dp"
+            android:background="@drawable/rounded_pink_background"
+            android:text="janet John"
+            android:textColor="@color/colorWhite"
+            android:textSize="12sp"
+            android:visibility="gone" />
+    </RelativeLayout>
+</RelativeLayout>
