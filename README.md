@@ -21,8 +21,8 @@ Hi! This is an Android Application in which i am using **Google Map Cluster With
 
 ## Screenshots
 
-![Google map screenshot 1](https://picasaweb.google.com/108675837573371980104/6715345302519444929#6715345304694166994 "gmap-screenshot1")
-![Google map screenshot 2](https://picasaweb.google.com/108675837573371980104/6715345749450630881#6715345750825936658 "gmap screenshot 2")
+![Google map screenshot 1](https://raw.githubusercontent.com/mdubey07/GoogleMapClusterCustomMarker/d6db1d8cddc9b0ce0f96e1b0c93491c34a5ecd3c/app/src/main/res/drawable/scr1.png")
+![Google map screenshot 2](https://raw.githubusercontent.com/mdubey07/GoogleMapClusterCustomMarker/d6db1d8cddc9b0ce0f96e1b0c93491c34a5ecd3c/app/src/main/res/drawable/scr2.png")
 
 ## FAQ
 
