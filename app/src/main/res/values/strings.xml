@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">MapApplication</string>
     <string name="title_activity_maps">Map</string>
-    <string name="google_map_key">AIzaSyDqKAWRDz86HJup1pHoesf3tt-bniA_WFA</string>
+    <string name="google_map_key">your-key-will-goes-here</string>
     <string name="km">3.2 KM</string>
     <string name="post_title">Title of Post will goes here and much more we can add</string>
 </resources>
