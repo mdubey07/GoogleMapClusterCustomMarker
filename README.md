@@ -21,8 +21,8 @@ Hi! This is an Android Application in which i am using **Google Map Cluster With
 
 ## Screenshots
 
-![Google map screenshot 1](http://wntechs.com/donotouch/images/scr1.png)
-![Google map screenshot 2](http://wntechs.com/donotouch/images/scr2.png)
+![Google map screenshot 1](http://wntechs.com/donotouch/images/s1.png)
+![Google map screenshot 2](http://wntechs.com/donotouch/images/s2.png)
 
 ## FAQ
 
