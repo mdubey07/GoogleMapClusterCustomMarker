@@ -125,8 +125,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void loadPost() {
 
-//        double lat = 26.856690;
-//        double lot = 80.939850;
+//     double lat = 26.856690;
+//     double lng = 80.939850;
 
         double km = 1.5;
         String url = "http://wntechs.com/";
@@ -139,7 +139,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         for (int i = 0; i < 10; i++) {
 
-            double offset = i / 60d;
+            double offset = .01621;
 
             WPPost post = new WPPost();
             post.setTitle("Title_" + i);
@@ -221,12 +221,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         for (int i = 0; i < 30; i++) {
             double offset = i / 60d;
             //final double random = new Random().nextDouble();
-            Random r = new Random();
-            double random = min + (max - min) * r.nextDouble();
-            offset = offset + random;
+//            Random r = new Random();
+//            double random = min + (max - min) * r.nextDouble();
+//            offset = offset + random;
             lat = lat + offset;
             lng = lng + offset;
-            Log.e("random", String.valueOf(random));
+            //Log.e("random", String.valueOf(random));
 
             // Set the lat/long coordinates for the marker.
 //            double lat = 51.5009;
