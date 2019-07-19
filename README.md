@@ -1,2 +1,37 @@
-# CustomMarkerGoogleMapCluster
-Android Open Source Google Map integration project with having ability to add your custom marker and with Marker Clustering Implementation.
+# Google Map Cluster With Custom Marker!
+
+Hi! This is an Android Application in which i am using **Google Map Cluster With Custom Marker**. This is an open source Android Application, Anyone can use this **Github Repository** and use as per their need. The Contributor of this **Github Repository** are [What's New Technologies](http://wntechs.com/), [Ram Kumar](https://github.com/wntechs) and [mdubey07](https://github.com/mdubey07).
+
+
+## Layout Design principles
+
+-   There are some **Pre-Built** XML layout already implemented in this Project.  
+-   You can use or modify as per your requirements **OR**
+-   You can also create your own new layout and use As per the Java codes
+- You must have to use same Ids if you don't want to change any logic or codes behind Java codes.
+
+## Features
+
+-   This android Application use Google Map APIs
+-   Implementation of Google Map Cluster
+-   Implementation of Custom Marker
+-   Have many custom marker styles in layout folder
+-   Implementation of WordPress Post to Dynamically fetched the post data of users and show to the Google Map with Cluster Functionalities.
+-   Uses of WordPress REST API
+
+## Screenshots
+
+![Google map screenshot 1](https://picasaweb.google.com/108675837573371980104/6715345302519444929#6715345304694166994 "gmap-screenshot1")
+![Google map screenshot 2](https://picasaweb.google.com/108675837573371980104/6715345749450630881#6715345750825936658 "gmap screenshot 2")
+
+## FAQ
+
+Here is some Frequently asked Questions which will help you to implement this Android Application.
+#### How to Install this App
+> Simply clone this repository and use as per your needs.
+
+#### How to make contribution
+> You can simply fork us to make this application more sustainable. We will appreciate your efforts.
+
+
+
