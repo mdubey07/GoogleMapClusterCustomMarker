@@ -21,8 +21,8 @@ Hi! This is an Android Application in which i am using **Google Map Cluster With
 
 ## Screenshots
 
-![Google map screenshot 1](https://raw.githubusercontent.com/mdubey07/GoogleMapClusterCustomMarker/d6db1d8cddc9b0ce0f96e1b0c93491c34a5ecd3c/app/src/main/res/drawable/scr1.png")
-![Google map screenshot 2](https://raw.githubusercontent.com/mdubey07/GoogleMapClusterCustomMarker/d6db1d8cddc9b0ce0f96e1b0c93491c34a5ecd3c/app/src/main/res/drawable/scr2.png")
+![Google map screenshot 1](https://photos.google.com/photo/AF1QipO_UCsR-SemrSSQGQxNUwbPpm9e0ImjXlEecWbk")
+![Google map screenshot 2](https://lh3.googleusercontent.com/__9rzM0W-tnAdaFfXXekQz6caeI94TAOkhwbRTWlcLKxtY7tCIXKhngnyQHWDyUjOnuOIb32lhUm1WLDlcsCqZbbZJPM9uma5yEJ9NrlX9vvbjzPAyrvb1DnoGuhN08bIeUDhaXBYRnnOHo240EmyduczZ9oo3xvM3kCd8ddtIZZKlvEeGTz7g9hSWhfu-c6noUT80rL3vnLCJ1Ficmpe83IvRneMElerb2v7sVH_vXc5M6-NSCazye7aco8xg9IsWOEXN09qAp9qfmGgr8E4RbbqRSjWpj3jJX4LOcVKEBh7gjGanuAjfD1BxJR-a_7esXpANJkmkOIjk9xk6wDPCrdufJxmqiecN1zDxqo0Z0OVh5GMZ4AK_iL64FFJVxYvzXDEymP-9F312G-Xc8hVfD5selLMFJcK2k7S_jM7whMjJOfPehO41oH32iyiTeYWo1S21Slwp2tnkjl3a8hp4EJOVKdLVjlMEBnix8WZKev3oD4ZejXKlSiPPKyK6mlzdYpJZfPNu8mouuzr0n-f0G36ke9A-CG3mrEs7kussa0jnGN0Gx19OIrg7f2pt17pnQTVRAxxLHWYbvTV8uPcnxteRSeBP8x4EOD7_F1njaTVPZ7qKhB0DnnU9QG5wncJllVOzT-QGinHZFky9x9bmBSWjFpz_k=w426-h757-no")
 
 ## FAQ
 
