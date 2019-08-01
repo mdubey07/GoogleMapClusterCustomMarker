@@ -10,7 +10,7 @@ public class MyItem implements ClusterItem {
     private double kmaway;
     private String imgPath;
     private String url;
-    private String title;
+
 
     public MyItem(double lat, double lng) {
         mTitle = "";
@@ -33,6 +33,9 @@ public class MyItem implements ClusterItem {
     public String getTitle() {
         return mTitle;
     }
+
+
+
 
     public LatLng getmPosition() {
         return mPosition;

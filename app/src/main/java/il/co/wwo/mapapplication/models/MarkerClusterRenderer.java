@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 import com.google.maps.android.ui.IconGenerator;
+import com.squareup.picasso.Picasso;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import il.co.wwo.mapapplication.MapsActivity;
@@ -47,8 +49,9 @@ public class MarkerClusterRenderer extends DefaultClusterRenderer<MyItem> {   //
     protected void onBeforeClusterItemRendered(MyItem item, MarkerOptions markerOptions) { // 5
 //        markerImageView.setImageResource(R.drawable.right_marker);  // 6
 //        Bitmap icon = iconGenerator.makeIcon();  // 7
+        Log.e("imgPath", item.getImgPath());
         double roundOff = Math.round(item.getKmaway() * 100.0) / 100.0;
-        markerOptions.icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(mContext, R.drawable.g1, item.getTitle(), roundOff + " KM")));  // 8
+        markerOptions.icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(mContext, item.getImgPath(), item.getTitle(), roundOff + " KM")));  // 8
         markerOptions.title(item.getTitle());
 
 //        mMap.addMarker(markerOptions.position(customMarkerLocation).
@@ -63,13 +66,20 @@ public class MarkerClusterRenderer extends DefaultClusterRenderer<MyItem> {   //
 
     }
 
-    public static Bitmap createCustomMarker(Context context, @DrawableRes int resource, String _name, String km) {
+    public static Bitmap createCustomMarker(Context context, String imgPath, String _name, String km) {
 
-        View marker = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.custom_marker_layout, null);
+        View marker = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.custom_marker_style_2, null);
 
         CircleImageView markerImage = marker.findViewById(R.id.user_dp);
-        markerImage.setImageResource(resource);
-        TextView txt_name = marker.findViewById(R.id.name);
+
+        Picasso.get()
+                .setLoggingEnabled(true);
+        Picasso.get()
+                .load(imgPath)
+                .resize(50,50)
+                .error(R.drawable.g1)
+                .into(markerImage);
+        TextView txt_name = marker.findViewById(R.id.post_name);
         txt_name.setText(_name);
         TextView kmaway = marker.findViewById(R.id.kmaway);
         kmaway.setText(km);

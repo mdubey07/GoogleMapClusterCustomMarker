@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -41,12 +42,17 @@ import com.google.android.gms.maps.model.RoundCap;
 import com.google.maps.android.clustering.ClusterManager;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import il.co.wwo.mapapplication.models.MarkerClusterRenderer;
 import il.co.wwo.mapapplication.models.MyItem;
+import il.co.wwo.mapapplication.models.PostResponse;
 import il.co.wwo.mapapplication.models.WPPost;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -54,8 +60,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     // Declare a variable for the cluster manager.
     private ClusterManager<MyItem> mClusterManager;
     private ArrayList<WPPost> postList = new ArrayList<>();
-    double lat = 26.856690;
-    double lng = 80.939850;
+    private ArrayList<PostResponse> wpPostList = new ArrayList<>();
+    double lat = 32.899049;
+    double lng = 35.447474;
     //private MapView mapView;
 
     @Override
@@ -69,6 +76,58 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+    }
+
+    private void loadWpPosts(){
+
+        Call<List<PostResponse>> apiRequest = APIClient.getClient().getPostsRequest(lat, lng);
+        apiRequest.enqueue(new Callback<List<PostResponse>>(){
+
+            @Override
+            public void onResponse(Call<List<PostResponse>> call, Response<List<PostResponse>> response){
+                if(response.isSuccessful()){
+                    wpPostList.clear();
+                    if(response.body() != null) {
+                        wpPostList.addAll(response.body());
+                        setupMarkers();
+                    }
+                    else
+                        Toast.makeText(getApplicationContext(),"No items found nearby", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<PostResponse>> call, Throwable t){
+
+                Toast.makeText(getApplicationContext(),"Some error in webservice call", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void setupMarkers(){
+
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lng), 10));
+
+        // Initialize the manager with the context and the map.
+        // (Activity extends context, so we can pass 'this' in the constructor.)
+        mClusterManager = new ClusterManager<>(this, mMap);
+
+        mClusterManager.setRenderer(new MarkerClusterRenderer(this, mMap, mClusterManager));
+
+        // Point the map's listeners at the listeners implemented by the cluster
+        // manager.
+        mMap.setOnCameraIdleListener(mClusterManager);
+        mMap.setOnMarkerClickListener(mClusterManager);
+        if(wpPostList != null){
+
+            for(PostResponse post: wpPostList){
+                MyItem offsetItem = new MyItem(post.getLatitude(), post.getLongitude(), post.getTitle(),"test snippet");
+                offsetItem.setKmaway(post.getDistance());
+
+                offsetItem.setImgPath(post.getThumbnail());
+                mClusterManager.addItem(offsetItem);
+            }
+        }
     }
 
 
@@ -91,7 +150,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onMapLoaded() {
 
                 //loadPost();
-                setUpClusterer();
+                //setUpClusterer();
+                loadWpPosts();
 
             }
         });
@@ -105,7 +165,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         CircleImageView markerImage = marker.findViewById(R.id.user_dp);
         markerImage.setImageResource(resource);
-        TextView txt_name = marker.findViewById(R.id.name);
+        TextView txt_name = marker.findViewById(R.id.post_name);
         txt_name.setText(_name);
         TextView kmaway = marker.findViewById(R.id.kmaway);
         kmaway.setText(km);
@@ -199,7 +259,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setOnMarkerClickListener(mClusterManager);
 
         // Add cluster items (markers) to the cluster manager.
-        addItems();
+        //addItems();
         //loadPost();
     }
 
