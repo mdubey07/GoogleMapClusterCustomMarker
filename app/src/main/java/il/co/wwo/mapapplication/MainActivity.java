@@ -1,5 +1,7 @@
 package il.co.wwo.mapapplication;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
 
 import android.app.Activity;
@@ -8,6 +10,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -37,6 +40,7 @@ import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import il.co.wwo.mapapplication.models.PostResponse;
+import mumayank.com.airlocationlibrary.AirLocation;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -44,20 +48,39 @@ import retrofit2.Response;
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private static  GoogleMap mMap;
+    private AirLocation airLocation;
     private ArrayList<PostResponse> wpPostList = new ArrayList<>();
     double lat = 32.899049;
     double lng = 35.447474;
     private ArrayList<Bitmap> markerLayoutList = new ArrayList<>();
     HashMap<Integer, PostResponse> hashMapMarker = new HashMap<>();
+    private SupportMapFragment mapFragment;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+        mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+        airLocation = new AirLocation(this, true, true, new AirLocation.Callbacks() {
+            @Override
+            public void onSuccess( Location location) {
+                // do something
+                lat = location.getLatitude();
+                lng = location.getLongitude();
+                mapFragment.getMapAsync(MainActivity.this);
+            }
+
+            @Override
+            public void onFailed( AirLocation.LocationFailedEnum locationFailedEnum) {
+                // do something
+                Toast.makeText(MainActivity.this,"Current location cann't be determined.", Toast.LENGTH_LONG).show();
+            }
+        });
+
     }
+
+
 
 
     /**
@@ -99,8 +122,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             final LatLngBounds.Builder builder = new LatLngBounds.Builder();
             markerLayoutList.clear();
             for(final PostResponse post : wpPostList){
-
-
 
                 final LatLng location = new LatLng(post.getLatitude(), post.getLongitude());
                 builder.include(location);
@@ -191,5 +212,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 Toast.makeText(getApplicationContext(),"Some error in webservice call", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    // override and call airLocation object's method by the same name
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        airLocation.onActivityResult(requestCode, resultCode, data);
+    }
+
+    // override and call airLocation object's method by the same name
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        airLocation.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
     }
 }
