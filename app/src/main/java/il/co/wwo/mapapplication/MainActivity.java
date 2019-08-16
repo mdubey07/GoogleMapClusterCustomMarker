@@ -68,6 +68,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 // do something
                 lat = location.getLatitude();
                 lng = location.getLongitude();
+                /* lat = 32.899049;
+                 lng = 35.447474;*/
                 mapFragment.getMapAsync(MainActivity.this);
             }
 
@@ -98,6 +100,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         LatLng currentLocation = new LatLng(lat, lng);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(12), 2000, null);
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
@@ -150,10 +153,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                         });
             }
 
-            LatLngBounds bounds = builder.build();
+           /* LatLngBounds bounds = builder.build();
             CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 200);
             mMap.moveCamera(cu);
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(10), 2000, null);
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(10), 2000, null);*/
         }
     }
 
