@@ -3,6 +3,8 @@ package il.co.wwo.mapapplication;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.Activity;
 import android.content.Context;
@@ -31,6 +33,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.VisibleRegion;
+import com.google.maps.android.SphericalUtil;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
@@ -39,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import il.co.wwo.mapapplication.adapters.LeftAdapter;
 import il.co.wwo.mapapplication.models.PostResponse;
 import mumayank.com.airlocationlibrary.AirLocation;
 import retrofit2.Call;
@@ -55,10 +60,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private ArrayList<Bitmap> markerLayoutList = new ArrayList<>();
     HashMap<Integer, PostResponse> hashMapMarker = new HashMap<>();
     private SupportMapFragment mapFragment;
+    private LeftAdapter leftAdapter, rightAdapter;
+    private RecyclerView leftRecycler, rightRecycler;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        leftAdapter = new LeftAdapter(this);
+        rightAdapter = new LeftAdapter(this);
+
+        leftRecycler = findViewById(R.id.left_list);
+        leftRecycler.setLayoutManager(new LinearLayoutManager(this));
+        leftRecycler.setAdapter(leftAdapter);
+
+        rightRecycler = findViewById(R.id.right_list);
+        rightRecycler.setLayoutManager(new LinearLayoutManager(this));
+        rightRecycler.setAdapter(rightAdapter);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -76,7 +93,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onFailed( AirLocation.LocationFailedEnum locationFailedEnum) {
                 // do something
-                Toast.makeText(MainActivity.this,"Current location cann't be determined.", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this,"Current location can't be determined.", Toast.LENGTH_LONG).show();
             }
         });
 
@@ -98,35 +115,189 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        LatLng currentLocation = new LatLng(lat, lng);
+        final LatLng currentLocation = new LatLng(lat, lng);
+
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(currentLocation);
+        mMap.addMarker(markerOptions);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(12), 2000, null);
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(12), 2000, new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {
+                //Here you can take the snapshot or whatever you want
+                setBoundryMarkers();
+                loadWpPosts();
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+        });
+
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                mMap.animateCamera(CameraUpdateFactory.newLatLng(marker.getPosition()));
-                PostResponse post = hashMapMarker.get(marker.hashCode());
+
+
+                //mMap.animateCamera(CameraUpdateFactory.newLatLng(marker.getPosition()));
+                //calculateIntersection(currentLocation, marker.getPosition());
+
+               /* PostResponse post = hashMapMarker.get(marker.hashCode());
                 if(post != null){
                     Toast.makeText(MainActivity.this,post.getTitle(), Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(MainActivity.this, BrowserActivity.class);
                     intent.putExtra("url", post.getLink());
                     startActivity(intent);
-                }
+                }*/
                 return true;
             }
         });
-        loadWpPosts();
 
+
+    }
+
+    private void setBoundryMarkers(){
+        double x1,x2,x3,x4, y1, y2, y3, y4, p1, p2;
+        VisibleRegion visibleRegion = mMap.getProjection().getVisibleRegion();
+        x1 = visibleRegion.farLeft.latitude;
+        y1 = visibleRegion.farLeft.longitude;
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(new LatLng(x1,y1));
+        mMap.addMarker(markerOptions);
+        Log.e("m1", x1 + ", " + y1);
+
+
+        x2 = visibleRegion.farRight.latitude;
+        y2 = visibleRegion.farRight.longitude;
+        MarkerOptions markerOptions2 = new MarkerOptions();
+        markerOptions2.position(new LatLng(x2,y2));
+        mMap.addMarker(markerOptions2);
+        Log.e("m2", x2 + ", " + y2);
+
+        x3 = visibleRegion.nearRight.latitude;
+        y3 = visibleRegion.nearRight.longitude;
+        MarkerOptions markerOptions3 = new MarkerOptions();
+        markerOptions3.position(new LatLng(x3,y3));
+        mMap.addMarker(markerOptions3);
+        Log.e("m3", x3 + ", " + y3);
+
+
+        x4 = visibleRegion.nearLeft.latitude;
+        y4 = visibleRegion.nearLeft.longitude;
+        MarkerOptions markerOptions4 = new MarkerOptions();
+        markerOptions4.position(new LatLng(x4,y4));
+        mMap.addMarker(markerOptions4);
+        Log.e("m4", x4 + ", " + y4);
+
+
+
+    }
+
+    private LatLng calculateIntersection(LatLng currentLocation , LatLng location){
+        LatLng temp = null;
+        VisibleRegion visibleRegion = mMap.getProjection().getVisibleRegion();
+        double x1,x2,x3,x4, y1, y2, y3, y4, p1, p2, nLat, nLng;
+        x1 = x2 = x3 = x4 = y1 = y2 = y3 = y4 = p1 = p2 = 0;
+        x1 = lat;
+        y1 = lng;
+        x2 = location.latitude;
+        y2 = location.longitude;
+
+
+        double dir = SphericalUtil.computeHeading(currentLocation,location);// vehicleBearing(currentLocation,location);
+        Log.e("radians ", dir +"");
+        Log.e("location ", location.latitude +", " + location.longitude);
+        LatLng topLeft, topRight, bottomLeft, bottomRight;
+        topLeft = visibleRegion.farLeft;
+        topRight = visibleRegion.farRight;
+        bottomLeft = visibleRegion.nearLeft;
+        bottomRight = visibleRegion.nearRight;
+        //Log.e("visible ", location.latitude +", " + location.longitude);
+        if( ( (dir > 0 && dir <=45) ||  ( dir < 0 && dir  >= -45) )) {
+
+            Log.e("side ", "top");
+            nLat = topLeft.latitude;
+            nLng = location.longitude;
+            if(nLng < topLeft.longitude)
+                nLng = topLeft.longitude;
+            if( nLng > topRight.longitude )
+                nLng = topRight.longitude;
+            temp = new LatLng(nLat, nLng);
+
+
+        }
+        if(dir > 45 && dir <= 135) {
+
+            Log.e("side ", "right");
+            nLat = location.latitude;
+            if(nLat < bottomRight.latitude)
+                nLat = bottomRight.latitude;
+            if(nLat > topRight.latitude)
+                nLat = topRight.latitude;
+            nLng = topRight.longitude;
+            temp = new LatLng(nLat, nLng);
+
+        }
+        if( ( (dir > 135 && dir <= 180) ||  dir < -135 ) ){
+
+
+            Log.e("side ", "bottom");
+            nLat = bottomLeft.latitude;
+            nLng = location.longitude;
+            if(nLng > bottomRight.longitude)
+                nLng = bottomRight.longitude;
+            if(nLng < bottomLeft.longitude)
+                nLng = bottomLeft.longitude;
+            temp = new LatLng(nLat, nLng);
+
+        }
+        if(dir < -45 && dir > -135) {
+
+            Log.e("side ", "left");
+            nLat = location.latitude;
+            if( nLat < bottomLeft.latitude )
+                nLat = bottomLeft.latitude;
+            if(nLat > topLeft.latitude)
+                nLat = topLeft.latitude;
+            nLng = bottomLeft.longitude;
+            temp = new LatLng(nLat, nLng);
+        }
+
+
+
+
+        if(temp != null) {
+            MarkerOptions markerOptions = new MarkerOptions();
+            markerOptions.position(temp);
+            mMap.addMarker(markerOptions);
+        }
+        return temp;
+    }
+
+    private void setupAdapters(){
+        if(wpPostList.size() > 0){
+            leftAdapter.setListItems(wpPostList);
+            leftAdapter.notifyDataSetChanged();
+        }
+
+        if(wpPostList.size() > 0){
+            rightAdapter.setListItems(wpPostList);
+            rightAdapter.notifyDataSetChanged();
+        }
     }
 
 
     private void setupMarkers(){
         if(wpPostList != null){
             final LatLngBounds.Builder builder = new LatLngBounds.Builder();
+            VisibleRegion visibleRegion = mMap.getProjection().getVisibleRegion();
             markerLayoutList.clear();
             for(final PostResponse post : wpPostList){
-
+                LatLng currentLocation = new LatLng(lat, lng);
                 final LatLng location = new LatLng(post.getLatitude(), post.getLongitude());
+                if(!visibleRegion.latLngBounds.contains(location))
+                    calculateIntersection(currentLocation, location);
                 builder.include(location);
                 Picasso.get()
                         .load(post.getThumbnail())
@@ -144,6 +315,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                 markerLayoutList.add(icon);
                                 options.icon(BitmapDescriptorFactory.fromBitmap(icon));
                                 Marker marker = mMap.addMarker(options);
+
                                 hashMapMarker.put(marker.hashCode(),post);
                             }
                             @Override
@@ -202,7 +374,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     wpPostList.clear();
                     if(response.body() != null) {
                         wpPostList.addAll(response.body());
+                        Log.e("list", wpPostList.toString());
                         setupMarkers();
+                        //setupAdapters();
                     }
                     else
                         Toast.makeText(getApplicationContext(),"No items found nearby", Toast.LENGTH_SHORT).show();
