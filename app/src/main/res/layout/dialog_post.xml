@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:background="@color/colorWhite"
+    android:layout_margin="15dp"
+    android:layout_height="wrap_content">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="200dp">
+        <ImageView
+            android:id="@+id/thumb_image"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:src="@drawable/defalut_card"
+            />
+        <ImageView
+            android:id="@+id/btn_close"
+            android:src="@drawable/ic_close_circle"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_margin="10dp"
+            android:layout_width="25dp"
+            android:layout_height="25dp" />
+        <TextView
+            android:id="@+id/distance"
+            android:background="#BCF3EEEB"
+            android:textColor="@color/Black"
+            android:padding="10dp"
+            android:layout_alignParentBottom="true"
+            android:text="12 Km away"
+            android:textAlignment="center"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/title"
+        android:textStyle="bold"
+        android:textSize="22dp"
+        android:textColor="#FF8F00"
+        android:text="Heading"
+        android:padding="10dp"
+        android:textAlignment="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:text="This is some description about the post"
+        android:id="@+id/description"
+        android:padding="10dp"
+        android:textAlignment="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btn_link"
+        android:layout_gravity="center"
+        android:layout_margin="15dp"
+        android:background="#EF6C00"
+        android:text="@string/link_title"
+        android:textColor="@color/colorWhite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>

@@ -5,4 +5,5 @@
     <string name="km">3.2 KM</string>
     <string name="post_title">Title of Post will goes here and much more we can add</string>
     <string name="title_activity_main">Map</string>
+    <string name="link_title">Goto Link</string>
 </resources>

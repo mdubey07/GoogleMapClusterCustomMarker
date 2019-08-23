@@ -12,23 +12,5 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".MainActivity" />
-    <androidx.recyclerview.widget.RecyclerView
-        android:layout_alignParentStart="true"
-        android:layout_alignParentLeft="true"
-        android:id="@+id/left_list"
-        android:layout_width="120dp"
-        tools:listitem="@layout/custom_marker_style_2"
-        android:visibility="gone"
-        android:layout_height="match_parent">
-    </androidx.recyclerview.widget.RecyclerView>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
-        android:id="@+id/right_list"
-        android:layout_width="120dp"
-        tools:listitem="@layout/custom_marker_style_2"
-        android:visibility="gone"
-        android:layout_height="match_parent">
-    </androidx.recyclerview.widget.RecyclerView>
 </RelativeLayout>

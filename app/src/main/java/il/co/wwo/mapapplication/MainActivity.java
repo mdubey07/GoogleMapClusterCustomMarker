@@ -3,15 +3,16 @@ package il.co.wwo.mapapplication;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.lifecycle.Observer;
 
-import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -19,11 +20,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.CameraUpdate;
+import com.emreeran.locationlivedata.LocationLiveData;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -34,62 +38,57 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.VisibleRegion;
-import com.google.maps.android.SphericalUtil;
 import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Target;
+
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
-import il.co.wwo.mapapplication.adapters.LeftAdapter;
 import il.co.wwo.mapapplication.models.PostResponse;
 import mumayank.com.airlocationlibrary.AirLocation;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
+import static com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY;
+import static il.co.wwo.mapapplication.BoundaryLocation.ANCHOR_BOTTOM;
+
+public class MainActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnCameraMoveStartedListener, GoogleMap.OnCameraIdleListener, GoogleMap.OnCameraMoveListener {
 
     private static  GoogleMap mMap;
     private AirLocation airLocation;
+    private HashMap<Integer,Marker> hashMapm = new HashMap<>();
     private ArrayList<PostResponse> wpPostList = new ArrayList<>();
     double lat = 32.899049;
     double lng = 35.447474;
+    LatLng currentLatLng;
     private ArrayList<Bitmap> markerLayoutList = new ArrayList<>();
     HashMap<Integer, PostResponse> hashMapMarker = new HashMap<>();
     private SupportMapFragment mapFragment;
-    private LeftAdapter leftAdapter, rightAdapter;
-    private RecyclerView leftRecycler, rightRecycler;
+    protected static final int REQUEST_CHECK_SETTINGS = 0x1;
+    Marker userMarker;
+    LocationLiveData locationLiveData;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        leftAdapter = new LeftAdapter(this);
-        rightAdapter = new LeftAdapter(this);
-
-        leftRecycler = findViewById(R.id.left_list);
-        leftRecycler.setLayoutManager(new LinearLayoutManager(this));
-        leftRecycler.setAdapter(leftAdapter);
-
-        rightRecycler = findViewById(R.id.right_list);
-        rightRecycler.setLayoutManager(new LinearLayoutManager(this));
-        rightRecycler.setAdapter(rightAdapter);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         airLocation = new AirLocation(this, true, true, new AirLocation.Callbacks() {
             @Override
             public void onSuccess( Location location) {
-                // do something
+
                 lat = location.getLatitude();
                 lng = location.getLongitude();
-                /* lat = 32.899049;
-                 lng = 35.447474;*/
+                currentLatLng = new LatLng(lat, lng);
                 mapFragment.getMapAsync(MainActivity.this);
             }
-
             @Override
             public void onFailed( AirLocation.LocationFailedEnum locationFailedEnum) {
                 // do something
@@ -97,35 +96,138 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+         locationLiveData = LocationLiveData.create(
+                this,
+                500L,                                       // Interval
+                100L,                                       // Fastest interval
+                PRIORITY_HIGH_ACCURACY,     // Priority
+                10F,                                        // Smallest displacement
+                10000L,                                     // Expiration time
+                10000L,                                     // Max wait time
+                10,                                         // Number of updates
+                new LocationLiveData.OnErrorCallback() {    // Error callbacks
+                    @Override
+                    public void onLocationSettingsException(@NotNull ApiException e) {
+                        if (e instanceof ResolvableApiException) {
+                            // Location settings are not satisfied, but this can be fixed
+                            // by showing the user a dialog.
+                            try {
+                                // Show the dialog by calling startResolutionForResult(),
+                                // and check the result in onActivityResult().
+                                ResolvableApiException resolvable = (ResolvableApiException) e;
+                                resolvable.startResolutionForResult(MainActivity.this,
+                                        REQUEST_CHECK_SETTINGS);
+                            } catch (IntentSender.SendIntentException sendEx) {
+                                // Ignore the error.
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onPermissionsMissing() {
+                        // Show message
+                    }
+                }
+        );
+
+
+
+
+
+    }
+
+    private void startLocationObserver(){
+        locationLiveData.observe(this, new Observer<Location>() {
+            @Override
+            public void onChanged(Location location) {
+                if(location.isFromMockProvider()) {
+                    LatLng tempLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                    if(currentLatLng.latitude != tempLocation.latitude && currentLatLng.longitude != tempLocation.longitude) {
+                        Log.e("locationChangeOld", lat + ", " + lng );
+                        lat = location.getLatitude();
+                        lng = location.getLongitude();
+                        Log.e("locationChangeNew", lat + ", " + lng );
+                        currentLatLng = tempLocation;
+                        loadWpPosts();
+                        mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLng));
+                        //mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12.0f));
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12.0f), new GoogleMap.CancelableCallback() {
+                            @Override
+                            public void onFinish() {
+
+                            }
+
+                            @Override
+                            public void onCancel() {
+
+                            }
+                        });
+                        Log.e("new Location", lat + ", " + lng);
+                    }
+                }else{
+                    Log.e("locationChange", "No change in location" );
+                }
+            }
+        });
+    }
+    @Override
+    public void onCameraIdle(){
+        Log.e("onCameraIdle", "true");
+       // loadWpPosts();
+
+        // Do resource intensive marker querying & drawing here
+            //mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat, lng)));
+            if(wpPostList.size() >0){
+                VisibleRegion visibleRegion = mMap.getProjection().getVisibleRegion();
+                for(final PostResponse post : wpPostList) {
+                    LatLng currentLocation = new LatLng(lat, lng);
+                    final LatLng location = new LatLng(post.getLatitude(), post.getLongitude());
+
+                    if (!visibleRegion.latLngBounds.contains(location)) {
+                        repositionMarkers(currentLocation, location, post);
+                    }else{
+                        Marker m = hashMapm.get(Integer.valueOf(post.getId()));
+                        if(m != null){
+                            m.setPosition(location);
+                            m.setAnchor(ANCHOR_BOTTOM.X, ANCHOR_BOTTOM.Y);
+                            Bitmap icon = createCustomMarker(MainActivity.this, post.getThumbnail(), "bottom");
+                            m.setIcon(BitmapDescriptorFactory.fromBitmap(icon));
+                        }
+                    }
+                }
+            }
+    }
+
+    @Override
+    public void onCameraMoveStarted(int i) {
+       // Log.e("onCameraMoveStarted", "true");
+    }
+
+    @Override
+    public void onCameraMove(){
+
+       // Log.e("onCameraMove", "true");
     }
 
 
 
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
 
+        googleMap.getUiSettings().setScrollGesturesEnabled(false);
+        mMap = googleMap;
+        try {
+            mMap.setMyLocationEnabled(true);
+        }catch (SecurityException e){
+            e.printStackTrace();
+        }
         final LatLng currentLocation = new LatLng(lat, lng);
 
-        MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.position(currentLocation);
-        mMap.addMarker(markerOptions);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(12), 2000, new GoogleMap.CancelableCallback() {
             @Override
             public void onFinish() {
-                //Here you can take the snapshot or whatever you want
-                setBoundryMarkers();
+                startLocationObserver();
                 loadWpPosts();
             }
 
@@ -135,206 +237,165 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
 
-
-                //mMap.animateCamera(CameraUpdateFactory.newLatLng(marker.getPosition()));
-                //calculateIntersection(currentLocation, marker.getPosition());
-
-               /* PostResponse post = hashMapMarker.get(marker.hashCode());
+                final PostResponse post = hashMapMarker.get(marker.hashCode());
                 if(post != null){
-                    Toast.makeText(MainActivity.this,post.getTitle(), Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(MainActivity.this, BrowserActivity.class);
-                    intent.putExtra("url", post.getLink());
-                    startActivity(intent);
-                }*/
+                    final Dialog dialog = new Dialog(MainActivity.this);
+                    dialog.setContentView(R.layout.dialog_post);
+                    dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);
+                    dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                    dialog.findViewById(R.id.btn_close).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                             dialog.dismiss();
+                        }
+                    });
+                    ImageView img = dialog.findViewById(R.id.thumb_image);
+                    Picasso.get().load(post.getThumbnail())
+                            .fit()
+                            .into(img);
+                    TextView txtDistance = dialog.findViewById(R.id.distance);
+                    txtDistance.setText(post.getDistance() + " km");
+                    TextView txtTitle = dialog.findViewById(R.id.title);
+                    txtTitle.setText(post.getTitle());
+                    TextView txtDescription = dialog.findViewById(R.id.description);
+                    txtDescription.setText(post.getTitle());
+                    Button btn_link = dialog.findViewById(R.id.btn_link);
+                    btn_link.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            Intent intent = new Intent(MainActivity.this, BrowserActivity.class);
+                            intent.putExtra("url", post.getLink());
+                            startActivity(intent);
+                            dialog.dismiss();
+                        }
+                    });
+
+                    dialog.show();
+
+                }
                 return true;
             }
         });
 
+        mMap.setOnCameraMoveListener(this);
+        mMap.setOnCameraIdleListener(this);
+        mMap.setOnCameraMoveStartedListener(this);
+    }
+    private void repositionMarkers(LatLng currentLocation , LatLng location, final PostResponse post){
+
+        BoundaryLocation boundaryLocation = new BoundaryLocation();
+        boundaryLocation.get( currentLocation , location,mMap);
+
+        Marker m = hashMapm.get(Integer.valueOf(post.getId()));
+        if(m != null) {
+            m.setPosition(boundaryLocation.location);
+            m.setAnchor(boundaryLocation.markerAnchor.X, boundaryLocation.markerAnchor.Y);
+            Bitmap icon = createCustomMarker(MainActivity.this, post.getThumbnail(), boundaryLocation.anchor);
+            m.setIcon(BitmapDescriptorFactory.fromBitmap(icon));
+        }
 
     }
+    private void calculateIntersection(LatLng currentLocation , LatLng location, final PostResponse post){
+        BoundaryLocation boundaryLocation = new BoundaryLocation();
+        boundaryLocation.get( currentLocation , location,mMap);
 
-    private void setBoundryMarkers(){
-        double x1,x2,x3,x4, y1, y2, y3, y4, p1, p2;
-        VisibleRegion visibleRegion = mMap.getProjection().getVisibleRegion();
-        x1 = visibleRegion.farLeft.latitude;
-        y1 = visibleRegion.farLeft.longitude;
-        MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.position(new LatLng(x1,y1));
-        mMap.addMarker(markerOptions);
-        Log.e("m1", x1 + ", " + y1);
+        final LatLng _location = boundaryLocation.location;
+        final String _anchor = boundaryLocation.anchor;
+        final BoundaryLocation.MarkerAnchor _markerAnchor = boundaryLocation.markerAnchor;
 
-
-        x2 = visibleRegion.farRight.latitude;
-        y2 = visibleRegion.farRight.longitude;
-        MarkerOptions markerOptions2 = new MarkerOptions();
-        markerOptions2.position(new LatLng(x2,y2));
-        mMap.addMarker(markerOptions2);
-        Log.e("m2", x2 + ", " + y2);
-
-        x3 = visibleRegion.nearRight.latitude;
-        y3 = visibleRegion.nearRight.longitude;
-        MarkerOptions markerOptions3 = new MarkerOptions();
-        markerOptions3.position(new LatLng(x3,y3));
-        mMap.addMarker(markerOptions3);
-        Log.e("m3", x3 + ", " + y3);
-
-
-        x4 = visibleRegion.nearLeft.latitude;
-        y4 = visibleRegion.nearLeft.longitude;
-        MarkerOptions markerOptions4 = new MarkerOptions();
-        markerOptions4.position(new LatLng(x4,y4));
-        mMap.addMarker(markerOptions4);
-        Log.e("m4", x4 + ", " + y4);
-
-
+        Picasso.get()
+                .load(post.getThumbnail())
+                .resize(50,50)
+                .error(R.drawable.g1)
+                .fetch(new com.squareup.picasso.Callback(){
+                    @Override
+                    public void onSuccess(){
+                        //Log.e("marker", "loaded  marker " + post.getId());
+                        //Log.e("side ", _anchor);
+                        MarkerOptions options = new MarkerOptions();
+                        options.position(_location);
+                        options.title(post.getTitle());
+                        options.anchor(_markerAnchor.X, _markerAnchor.Y);
+                        Bitmap icon = createCustomMarker(MainActivity.this,post.getThumbnail(),_anchor);
+                        markerLayoutList.add(icon);
+                        options.icon(BitmapDescriptorFactory.fromBitmap(icon));
+                        Marker marker = mMap.addMarker(options);
+                        hashMapm.put(Integer.valueOf(post.getId()), marker);
+                        hashMapMarker.put(marker.hashCode(),post);
+                    }
+                    @Override
+                    public void onError(Exception e){
+                        //Log.e("marker", "error loading  marker " + post.getId());
+                    }
+                });
 
     }
-
-    private LatLng calculateIntersection(LatLng currentLocation , LatLng location){
-        LatLng temp = null;
-        VisibleRegion visibleRegion = mMap.getProjection().getVisibleRegion();
-        double x1,x2,x3,x4, y1, y2, y3, y4, p1, p2, nLat, nLng;
-        x1 = x2 = x3 = x4 = y1 = y2 = y3 = y4 = p1 = p2 = 0;
-        x1 = lat;
-        y1 = lng;
-        x2 = location.latitude;
-        y2 = location.longitude;
-
-
-        double dir = SphericalUtil.computeHeading(currentLocation,location);// vehicleBearing(currentLocation,location);
-        Log.e("radians ", dir +"");
-        Log.e("location ", location.latitude +", " + location.longitude);
-        LatLng topLeft, topRight, bottomLeft, bottomRight;
-        topLeft = visibleRegion.farLeft;
-        topRight = visibleRegion.farRight;
-        bottomLeft = visibleRegion.nearLeft;
-        bottomRight = visibleRegion.nearRight;
-        //Log.e("visible ", location.latitude +", " + location.longitude);
-        if( ( (dir > 0 && dir <=45) ||  ( dir < 0 && dir  >= -45) )) {
-
-            Log.e("side ", "top");
-            nLat = topLeft.latitude;
-            nLng = location.longitude;
-            if(nLng < topLeft.longitude)
-                nLng = topLeft.longitude;
-            if( nLng > topRight.longitude )
-                nLng = topRight.longitude;
-            temp = new LatLng(nLat, nLng);
-
-
-        }
-        if(dir > 45 && dir <= 135) {
-
-            Log.e("side ", "right");
-            nLat = location.latitude;
-            if(nLat < bottomRight.latitude)
-                nLat = bottomRight.latitude;
-            if(nLat > topRight.latitude)
-                nLat = topRight.latitude;
-            nLng = topRight.longitude;
-            temp = new LatLng(nLat, nLng);
-
-        }
-        if( ( (dir > 135 && dir <= 180) ||  dir < -135 ) ){
-
-
-            Log.e("side ", "bottom");
-            nLat = bottomLeft.latitude;
-            nLng = location.longitude;
-            if(nLng > bottomRight.longitude)
-                nLng = bottomRight.longitude;
-            if(nLng < bottomLeft.longitude)
-                nLng = bottomLeft.longitude;
-            temp = new LatLng(nLat, nLng);
-
-        }
-        if(dir < -45 && dir > -135) {
-
-            Log.e("side ", "left");
-            nLat = location.latitude;
-            if( nLat < bottomLeft.latitude )
-                nLat = bottomLeft.latitude;
-            if(nLat > topLeft.latitude)
-                nLat = topLeft.latitude;
-            nLng = bottomLeft.longitude;
-            temp = new LatLng(nLat, nLng);
-        }
-
-
-
-
-        if(temp != null) {
-            MarkerOptions markerOptions = new MarkerOptions();
-            markerOptions.position(temp);
-            mMap.addMarker(markerOptions);
-        }
-        return temp;
-    }
-
-    private void setupAdapters(){
-        if(wpPostList.size() > 0){
-            leftAdapter.setListItems(wpPostList);
-            leftAdapter.notifyDataSetChanged();
-        }
-
-        if(wpPostList.size() > 0){
-            rightAdapter.setListItems(wpPostList);
-            rightAdapter.notifyDataSetChanged();
-        }
-    }
-
 
     private void setupMarkers(){
         if(wpPostList != null){
             final LatLngBounds.Builder builder = new LatLngBounds.Builder();
             VisibleRegion visibleRegion = mMap.getProjection().getVisibleRegion();
             markerLayoutList.clear();
+            hashMapMarker.clear();
+            hashMapm.clear();
+            mMap.clear();
+
             for(final PostResponse post : wpPostList){
                 LatLng currentLocation = new LatLng(lat, lng);
                 final LatLng location = new LatLng(post.getLatitude(), post.getLongitude());
-                if(!visibleRegion.latLngBounds.contains(location))
-                    calculateIntersection(currentLocation, location);
+
+                if(!visibleRegion.latLngBounds.contains(location)) {
+                     calculateIntersection(currentLocation, location, post);
+
+                }else{
+                    Picasso.get()
+                            .load(post.getThumbnail())
+                            .resize(50,50)
+                            .error(R.drawable.g1)
+                            .fetch(new com.squareup.picasso.Callback(){
+                                @Override
+                                public void onSuccess(){
+                                   // Log.e("marker", "loaded  marker " + post.getId());
+                                    MarkerOptions options = new MarkerOptions();
+                                    options.position(location);
+                                    options.title(post.getTitle());
+
+                                    Bitmap icon = createCustomMarker(MainActivity.this,post.getThumbnail(), "bottom");
+                                    markerLayoutList.add(icon);
+                                    options.icon(BitmapDescriptorFactory.fromBitmap(icon));
+                                    Marker marker = mMap.addMarker(options);
+                                    hashMapm.put(Integer.valueOf(post.getId()), marker);
+                                    hashMapMarker.put(marker.hashCode(),post);
+                                }
+                                @Override
+                                public void onError(Exception e){
+                                    //Log.e("marker", "error loading  marker " + post.getId());
+                                }
+                            });
+                }
                 builder.include(location);
-                Picasso.get()
-                        .load(post.getThumbnail())
-                        .resize(50,50)
-                        .error(R.drawable.g1)
-                        .fetch(new com.squareup.picasso.Callback(){
-                            @Override
-                            public void onSuccess(){
-                                Log.e("marker", "loaded  marker " + post.getId());
-                                MarkerOptions options = new MarkerOptions();
-                                options.position(location);
-                                options.title(post.getTitle());
-
-                                Bitmap icon = createCustomMarker(MainActivity.this,post.getThumbnail(),post.getTitle(),post.getDistance() + " Km", location);
-                                markerLayoutList.add(icon);
-                                options.icon(BitmapDescriptorFactory.fromBitmap(icon));
-                                Marker marker = mMap.addMarker(options);
-
-                                hashMapMarker.put(marker.hashCode(),post);
-                            }
-                            @Override
-                            public void onError(Exception e){
-                                Log.e("marker", "error loading  marker " + post.getId());
-                            }
-                        });
             }
 
-           /* LatLngBounds bounds = builder.build();
-            CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 200);
-            mMap.moveCamera(cu);
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(10), 2000, null);*/
         }
     }
 
-    public static Bitmap createCustomMarker(Context context, String imgPath, String _name, String km, LatLng opt) {
+    public static Bitmap createCustomMarker(Context context, String imgPath, String anchor) {
 
-        View marker = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.custom_marker_style_2, null);
+        View marker = null;
+        if(anchor.equals("top"))
+            marker = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.custom_marker_top, null);
+        else if(anchor.equals("left"))
+            marker = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.custom_marker_left, null);
+        else if(anchor.equals("bottom"))
+            marker = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.custom_marker_bottom, null);
+        else
+            marker = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.custom_marker_right, null);
 
         final CircleImageView markerImage = marker.findViewById(R.id.user_dp);
 
@@ -345,11 +406,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 .resize(50,50)
                 .error(R.drawable.g1)
                 .into(markerImage);
-        TextView txt_name = marker.findViewById(R.id.post_name);
-        txt_name.setText(_name);
-        TextView kmaway = marker.findViewById(R.id.kmaway);
-        kmaway.setText(km);
-
         DisplayMetrics displayMetrics = new DisplayMetrics();
         ((MainActivity) context).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         marker.setLayoutParams(new ViewGroup.LayoutParams(52, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -405,4 +461,5 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         airLocation.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
     }
+
 }
