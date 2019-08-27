@@ -142,30 +142,34 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onChanged(Location location) {
                 if(location.isFromMockProvider()) {
                     LatLng tempLocation = new LatLng(location.getLatitude(), location.getLongitude());
-                    if(currentLatLng.latitude != tempLocation.latitude && currentLatLng.longitude != tempLocation.longitude) {
-                        Log.e("locationChangeOld", lat + ", " + lng );
-                        lat = location.getLatitude();
-                        lng = location.getLongitude();
-                        Log.e("locationChangeNew", lat + ", " + lng );
-                        currentLatLng = tempLocation;
-                        loadWpPosts();
-                        mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLng));
-                        //mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12.0f));
-                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12.0f), new GoogleMap.CancelableCallback() {
-                            @Override
-                            public void onFinish() {
+                    if(location.isFromMockProvider()) {
+                        if (currentLatLng.latitude != tempLocation.latitude && currentLatLng.longitude != tempLocation.longitude) {
+                            Log.e("locationChangeOld", lat + ", " + lng);
+                            lat = location.getLatitude();
+                            lng = location.getLongitude();
+                            Log.e("locationChangeNew", lat + ", " + lng);
+                            currentLatLng = tempLocation;
+                            loadWpPosts();
+                            mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLng));
+                            //mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12.0f));
+                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12.0f), new GoogleMap.CancelableCallback() {
+                                @Override
+                                public void onFinish() {
 
-                            }
+                                }
 
-                            @Override
-                            public void onCancel() {
+                                @Override
+                                public void onCancel() {
 
-                            }
-                        });
-                        Log.e("new Location", lat + ", " + lng);
+                                }
+                            });
+                            Log.e("new Location", lat + ", " + lng);
+                        } else {
+                            Log.e("locationChange", "No change in location");
+                        }
                     }
                 }else{
-                    Log.e("locationChange", "No change in location" );
+                    //Log.e("locationChange", "No change in location" );
                 }
             }
         });
@@ -174,6 +178,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public void onCameraIdle(){
         Log.e("onCameraIdle", "true");
        // loadWpPosts();
+
 
         // Do resource intensive marker querying & drawing here
             //mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat, lng)));
@@ -192,6 +197,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             m.setAnchor(ANCHOR_BOTTOM.X, ANCHOR_BOTTOM.Y);
                             Bitmap icon = createCustomMarker(MainActivity.this, post.getThumbnail(), "bottom");
                             m.setIcon(BitmapDescriptorFactory.fromBitmap(icon));
+                        }else{
+                            Log.e("Null Marker", post.getId());
                         }
                     }
                 }
@@ -215,6 +222,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
 
         googleMap.getUiSettings().setScrollGesturesEnabled(false);
+        googleMap.getUiSettings().setZoomControlsEnabled(true);
+        googleMap.getUiSettings().setZoomGesturesEnabled(false);
+        googleMap.getUiSettings().setRotateGesturesEnabled(false);
         mMap = googleMap;
         try {
             mMap.setMyLocationEnabled(true);
@@ -298,6 +308,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             m.setAnchor(boundaryLocation.markerAnchor.X, boundaryLocation.markerAnchor.Y);
             Bitmap icon = createCustomMarker(MainActivity.this, post.getThumbnail(), boundaryLocation.anchor);
             m.setIcon(BitmapDescriptorFactory.fromBitmap(icon));
+        }else{
+            Log.e("Reposition", "Marker is null for post id " + post.getId());
         }
 
     }
@@ -308,7 +320,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         final LatLng _location = boundaryLocation.location;
         final String _anchor = boundaryLocation.anchor;
         final BoundaryLocation.MarkerAnchor _markerAnchor = boundaryLocation.markerAnchor;
-
+        MarkerOptions options = new MarkerOptions();
+        options.position(_location);
+        options.title(post.getTitle());
+        options.anchor(_markerAnchor.X, _markerAnchor.Y);
         Picasso.get()
                 .load(post.getThumbnail())
                 .resize(50,50)
@@ -318,10 +333,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     public void onSuccess(){
                         //Log.e("marker", "loaded  marker " + post.getId());
                         //Log.e("side ", _anchor);
-                        MarkerOptions options = new MarkerOptions();
-                        options.position(_location);
-                        options.title(post.getTitle());
-                        options.anchor(_markerAnchor.X, _markerAnchor.Y);
+
                         Bitmap icon = createCustomMarker(MainActivity.this,post.getThumbnail(),_anchor);
                         markerLayoutList.add(icon);
                         options.icon(BitmapDescriptorFactory.fromBitmap(icon));
@@ -331,9 +343,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                     @Override
                     public void onError(Exception e){
-                        //Log.e("marker", "error loading  marker " + post.getId());
+                        Log.e("marker", "error loading  marker " + post.getId());
+                        Marker marker = mMap.addMarker(options);
+                        hashMapm.put(Integer.valueOf(post.getId()), marker);
+                        hashMapMarker.put(marker.hashCode(),post);
                     }
                 });
+
 
     }
 
@@ -354,6 +370,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                      calculateIntersection(currentLocation, location, post);
 
                 }else{
+                    MarkerOptions options = new MarkerOptions();
+                    options.position(location);
+                    options.title(post.getTitle());
                     Picasso.get()
                             .load(post.getThumbnail())
                             .resize(50,50)
@@ -362,9 +381,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                 @Override
                                 public void onSuccess(){
                                    // Log.e("marker", "loaded  marker " + post.getId());
-                                    MarkerOptions options = new MarkerOptions();
-                                    options.position(location);
-                                    options.title(post.getTitle());
+
 
                                     Bitmap icon = createCustomMarker(MainActivity.this,post.getThumbnail(), "bottom");
                                     markerLayoutList.add(icon);
@@ -375,7 +392,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                 }
                                 @Override
                                 public void onError(Exception e){
-                                    //Log.e("marker", "error loading  marker " + post.getId());
+                                    Log.e("marker", "error loading  marker " + post.getId());
+                                    Marker marker = mMap.addMarker(options);
+                                    hashMapm.put(Integer.valueOf(post.getId()), marker);
+                                    hashMapMarker.put(marker.hashCode(),post);
                                 }
                             });
                 }
