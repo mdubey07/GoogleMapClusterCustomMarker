@@ -2,9 +2,12 @@ package il.co.wwo.mapapplication;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.Observer;
 
+import android.app.Application;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
@@ -57,14 +60,14 @@ import retrofit2.Response;
 import static com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY;
 import static il.co.wwo.mapapplication.BoundaryLocation.ANCHOR_BOTTOM;
 
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnCameraMoveStartedListener, GoogleMap.OnCameraIdleListener, GoogleMap.OnCameraMoveListener {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnCameraMoveStartedListener, GoogleMap.OnCameraIdleListener, GoogleMap.OnCameraMoveListener {
 
     private static  GoogleMap mMap;
     private AirLocation airLocation;
     private HashMap<Integer,Marker> hashMapm = new HashMap<>();
     private ArrayList<PostResponse> wpPostList = new ArrayList<>();
-    double lat = 32.899049;
-    double lng = 35.447474;
+    double lat = 31.891630;
+    double lng = 34.794020;
     LatLng currentLatLng;
     private ArrayList<Bitmap> markerLayoutList = new ArrayList<>();
     HashMap<Integer, PostResponse> hashMapMarker = new HashMap<>();
@@ -77,6 +80,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+        getSupportActionBar().setCustomView(R.layout.action_bar_layout);
+        TextView titleText = findViewById(R.id.tvTitle);
+        titleText.setText(R.string.app_name);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -142,13 +149,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onChanged(Location location) {
                 if(location.isFromMockProvider()) {
                     LatLng tempLocation = new LatLng(location.getLatitude(), location.getLongitude());
-                    if(location.isFromMockProvider()) {
+                    if(!location.isFromMockProvider()) {
                         if (currentLatLng.latitude != tempLocation.latitude && currentLatLng.longitude != tempLocation.longitude) {
                             Log.e("locationChangeOld", lat + ", " + lng);
                             lat = location.getLatitude();
                             lng = location.getLongitude();
                             Log.e("locationChangeNew", lat + ", " + lng);
                             currentLatLng = tempLocation;
+                            MarkerOptions uMOpt = new MarkerOptions();
+                            uMOpt.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_user));
+                            uMOpt.position(currentLatLng);
+                            userMarker = mMap.addMarker(uMOpt);
                             loadWpPosts();
                             mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLng));
                             //mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12.0f));
@@ -176,33 +187,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
     @Override
     public void onCameraIdle(){
-        Log.e("onCameraIdle", "true");
-       // loadWpPosts();
-
-
-        // Do resource intensive marker querying & drawing here
-            //mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat, lng)));
-            if(wpPostList.size() >0){
-                VisibleRegion visibleRegion = mMap.getProjection().getVisibleRegion();
-                for(final PostResponse post : wpPostList) {
-                    LatLng currentLocation = new LatLng(lat, lng);
-                    final LatLng location = new LatLng(post.getLatitude(), post.getLongitude());
-
-                    if (!visibleRegion.latLngBounds.contains(location)) {
-                        repositionMarkers(currentLocation, location, post);
-                    }else{
-                        Marker m = hashMapm.get(Integer.valueOf(post.getId()));
-                        if(m != null){
-                            m.setPosition(location);
-                            m.setAnchor(ANCHOR_BOTTOM.X, ANCHOR_BOTTOM.Y);
-                            Bitmap icon = createCustomMarker(MainActivity.this, post.getThumbnail(), "bottom");
-                            m.setIcon(BitmapDescriptorFactory.fromBitmap(icon));
-                        }else{
-                            Log.e("Null Marker", post.getId());
-                        }
-                    }
-                }
-            }
+        setupMarkers();
     }
 
     @Override
@@ -232,7 +217,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             e.printStackTrace();
         }
         final LatLng currentLocation = new LatLng(lat, lng);
-
+        MarkerOptions uMOpt = new MarkerOptions();
+        uMOpt.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_user));
+        uMOpt.position(currentLocation);
+        userMarker = mMap.addMarker(uMOpt);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(12), 2000, new GoogleMap.CancelableCallback() {
             @Override
@@ -270,7 +258,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                             .fit()
                             .into(img);
                     TextView txtDistance = dialog.findViewById(R.id.distance);
-                    txtDistance.setText(post.getDistance() + " km");
+                    txtDistance.setText(getString(R.string.km,String.valueOf(post.getDistance() ) ));
                     TextView txtTitle = dialog.findViewById(R.id.title);
                     txtTitle.setText(post.getTitle());
                     TextView txtDescription = dialog.findViewById(R.id.description);
@@ -279,6 +267,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     btn_link.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
+
                             Intent intent = new Intent(MainActivity.this, BrowserActivity.class);
                             intent.putExtra("url", post.getLink());
                             startActivity(intent);
@@ -344,6 +333,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     @Override
                     public void onError(Exception e){
                         Log.e("marker", "error loading  marker " + post.getId());
+                        Bitmap icon = createCustomMarker(MainActivity.this,R.drawable.no_image,_anchor);
+                        markerLayoutList.add(icon);
+                        options.icon(BitmapDescriptorFactory.fromBitmap(icon));
                         Marker marker = mMap.addMarker(options);
                         hashMapm.put(Integer.valueOf(post.getId()), marker);
                         hashMapMarker.put(marker.hashCode(),post);
@@ -361,7 +353,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             hashMapMarker.clear();
             hashMapm.clear();
             mMap.clear();
-
+            MarkerOptions uMOpt = new MarkerOptions();
+            uMOpt.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_user));
+            uMOpt.position(currentLatLng);
+            userMarker = mMap.addMarker(uMOpt);
             for(final PostResponse post : wpPostList){
                 LatLng currentLocation = new LatLng(lat, lng);
                 final LatLng location = new LatLng(post.getLatitude(), post.getLongitude());
@@ -393,6 +388,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                 @Override
                                 public void onError(Exception e){
                                     Log.e("marker", "error loading  marker " + post.getId());
+                                    Bitmap icon = createCustomMarker(MainActivity.this,R.drawable.no_image, "bottom");
+                                    markerLayoutList.add(icon);
+                                    options.icon(BitmapDescriptorFactory.fromBitmap(icon));
                                     Marker marker = mMap.addMarker(options);
                                     hashMapm.put(Integer.valueOf(post.getId()), marker);
                                     hashMapMarker.put(marker.hashCode(),post);
@@ -406,6 +404,40 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public static Bitmap createCustomMarker(Context context, String imgPath, String anchor) {
+
+        View marker = null;
+        if(anchor.equals("top"))
+            marker = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.custom_marker_top, null);
+        else if(anchor.equals("left"))
+            marker = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.custom_marker_left, null);
+        else if(anchor.equals("bottom"))
+            marker = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.custom_marker_bottom, null);
+        else
+            marker = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.custom_marker_right, null);
+
+        final CircleImageView markerImage = marker.findViewById(R.id.user_dp);
+
+        Picasso.get()
+                .setLoggingEnabled(true);
+        Picasso.get()
+                .load(imgPath)
+                .resize(50,50)
+                .error(R.drawable.g1)
+                .into(markerImage);
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        ((MainActivity) context).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        marker.setLayoutParams(new ViewGroup.LayoutParams(52, ViewGroup.LayoutParams.WRAP_CONTENT));
+        marker.measure(displayMetrics.widthPixels, displayMetrics.heightPixels);
+        marker.layout(0, 0, displayMetrics.widthPixels, displayMetrics.heightPixels);
+        marker.buildDrawingCache();
+        Bitmap bitmap = Bitmap.createBitmap(marker.getMeasuredWidth(), marker.getMeasuredHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        marker.draw(canvas);
+
+        return bitmap;
+    }
+
+    public static Bitmap createCustomMarker(Context context, int imgPath, String anchor) {
 
         View marker = null;
         if(anchor.equals("top"))

@@ -10,6 +10,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 public class BrowserActivity extends AppCompatActivity {
 
@@ -21,6 +22,13 @@ public class BrowserActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         url = getIntent().getStringExtra("url");
         setContentView(R.layout.activity_browser);
+        try {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }catch (NullPointerException e){
+            Toast.makeText(this, "Action bar title error",Toast.LENGTH_SHORT).show();
+        }
+        getSupportActionBar().setTitle(R.string.app_name);
         webView =  findViewById(R.id.webView);
         progressBar =  findViewById(R.id.progressBar);
         WebSettings webSetting = webView.getSettings();
@@ -57,5 +65,11 @@ public class BrowserActivity extends AppCompatActivity {
             progressBar.setVisibility(View.GONE);
         }
 
+    }
+
+    @Override
+    public boolean onSupportNavigateUp(){
+        onBackPressed();
+        return true;
     }
 }

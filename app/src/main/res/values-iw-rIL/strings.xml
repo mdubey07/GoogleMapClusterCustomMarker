@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">נקודת חן</string>
+    <string name="link_title">לחצו לפרטים נוספים</string>
+    <string name="km">%1$s ק\"מ</string>
+</resources>
