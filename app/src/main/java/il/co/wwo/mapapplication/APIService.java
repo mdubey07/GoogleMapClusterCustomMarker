@@ -12,7 +12,7 @@ import retrofit2.http.Path;
  * */
 public interface APIService {
 
-    @GET("pins/{latitude}/{longitude}")
-    Call<List<PostResponse>> getPostsRequest(@Path("latitude") double latitude, @Path("longitude") double longitude);
+    @GET("pins/{latitude}/{longitude}/{search_radius}/{max_result}")
+    Call<List<PostResponse>> getPostsRequest(@Path("latitude") double latitude, @Path("longitude") double longitude,@Path("search_radius") int radius, @Path("max_result") int max_result);
 
 }

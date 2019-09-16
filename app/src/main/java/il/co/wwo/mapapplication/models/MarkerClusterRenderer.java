@@ -24,7 +24,7 @@ import com.google.maps.android.ui.IconGenerator;
 import com.squareup.picasso.Picasso;
 
 import de.hdodenhof.circleimageview.CircleImageView;
-import il.co.wwo.mapapplication.MapsActivity;
+
 import il.co.wwo.mapapplication.R;
 
 public class MarkerClusterRenderer extends DefaultClusterRenderer<MyItem> {   // 1

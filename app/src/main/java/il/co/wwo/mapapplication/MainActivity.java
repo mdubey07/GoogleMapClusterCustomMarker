@@ -21,6 +21,9 @@ import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -41,6 +44,7 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.VisibleRegion;
+import com.google.android.material.snackbar.Snackbar;
 import com.squareup.picasso.Picasso;
 
 
@@ -58,7 +62,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import static com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY;
-import static il.co.wwo.mapapplication.BoundaryLocation.ANCHOR_BOTTOM;
+
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnCameraMoveStartedListener, GoogleMap.OnCameraIdleListener, GoogleMap.OnCameraMoveListener {
 
@@ -68,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ArrayList<PostResponse> wpPostList = new ArrayList<>();
     double lat = 31.891630;
     double lng = 34.794020;
+    PrefManager prefManager;
+    int search_radius, max_result;
     LatLng currentLatLng;
     private ArrayList<Bitmap> markerLayoutList = new ArrayList<>();
     HashMap<Integer, PostResponse> hashMapMarker = new HashMap<>();
@@ -80,6 +86,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        prefManager = new PrefManager(this);
+
         getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
         getSupportActionBar().setCustomView(R.layout.action_bar_layout);
         TextView titleText = findViewById(R.id.tvTitle);
@@ -187,7 +195,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     @Override
     public void onCameraIdle(){
-        setupMarkers();
+       // setupMarkers();
+        loadWpPosts();
     }
 
     @Override
@@ -206,9 +215,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
-        googleMap.getUiSettings().setScrollGesturesEnabled(false);
-        googleMap.getUiSettings().setZoomControlsEnabled(true);
-        googleMap.getUiSettings().setZoomGesturesEnabled(false);
+       // googleMap.getUiSettings().setScrollGesturesEnabled(false);
+        //googleMap.getUiSettings().setZoomControlsEnabled(true);
+       // googleMap.getUiSettings().setZoomGesturesEnabled(false);
         googleMap.getUiSettings().setRotateGesturesEnabled(false);
         mMap = googleMap;
         try {
@@ -472,8 +481,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void loadWpPosts(){
-
-        Call<List<PostResponse>> apiRequest = APIClient.getClient().getPostsRequest(lat, lng);
+        search_radius = prefManager.getSearchRadius();
+        max_result = prefManager.getMaxResult();
+        Snackbar snackbar = Snackbar.make(findViewById(R.id.map), R.string.wait_message, Snackbar.LENGTH_LONG);
+        snackbar.show();
+        Call<List<PostResponse>> apiRequest = APIClient.getClient().getPostsRequest(lat, lng, search_radius, max_result );
         apiRequest.enqueue(new Callback<List<PostResponse>>(){
 
             @Override
@@ -489,12 +501,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     else
                         Toast.makeText(getApplicationContext(),"No items found nearby", Toast.LENGTH_SHORT).show();
                 }
+                snackbar.dismiss();
             }
 
             @Override
             public void onFailure(Call<List<PostResponse>> call, Throwable t){
 
                 Toast.makeText(getApplicationContext(),"Some error in webservice call", Toast.LENGTH_SHORT).show();
+                snackbar.dismiss();
             }
         });
     }
@@ -512,6 +526,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         airLocation.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.setting) {
+
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
 }
