@@ -3,7 +3,13 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:ignore="AlwaysShowAction">
+    <item android:id="@+id/center"
+        android:icon="@drawable/ic_center"
+        android:title="@string/center"
+        app:showAsAction="always|withText" />
+
     <item android:id="@+id/setting"
+        android:icon="@drawable/ic_settings"
         android:title="@string/settings"
         app:showAsAction="always" />
 </menu>

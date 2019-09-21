@@ -14,7 +14,7 @@
         android:layout_marginLeft="36dp"
         android:layout_marginTop="8dp"
         android:contentDescription="@null"
-        android:src="@drawable/g1"
+        android:src="@drawable/no_image"
         app:civ_border_color="#fff" />
 
     <RelativeLayout
@@ -26,7 +26,7 @@
             android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:visibility="visible"
-            android:src="@drawable/left_marker"/>
+            android:src="@drawable/map_marker_bottom"/>
 
         <TextView
             android:id="@+id/kmaway"

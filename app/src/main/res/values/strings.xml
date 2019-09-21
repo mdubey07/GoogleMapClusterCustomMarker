@@ -4,6 +4,7 @@
     <string name="km">%1$s KM</string>
     <string name="link_title">Goto Link</string>
     <string name="settings">Settings</string>
+    <string name="center">Center</string>
     <string name="search_radius">Search Radius</string>
     <string name="no_of_results">Max No of Results</string>
     <string name="save">Save</string>

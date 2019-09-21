@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.Observer;
 
+import android.animation.ObjectAnimator;
 import android.app.Application;
 import android.app.Dialog;
 import android.content.Context;
@@ -81,6 +82,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
     Marker userMarker;
     LocationLiveData locationLiveData;
+    private Snackbar snackbar;
+    private float zoomLevel = 12;
+    private Menu mMenu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +96,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         getSupportActionBar().setCustomView(R.layout.action_bar_layout);
         TextView titleText = findViewById(R.id.tvTitle);
         titleText.setText(R.string.app_name);
+
+       // setTitle(R.string.app_name);
+        //snackbar = Snackbar.make(findViewById(R.id.map),"Lat: " + lat + ", Long: " + lng, Snackbar.LENGTH_INDEFINITE);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -146,6 +153,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         );
 
 
+        //snackbar.show();
 
 
 
@@ -155,53 +163,60 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationLiveData.observe(this, new Observer<Location>() {
             @Override
             public void onChanged(Location location) {
-                if(location.isFromMockProvider()) {
-                    LatLng tempLocation = new LatLng(location.getLatitude(), location.getLongitude());
-                    if(!location.isFromMockProvider()) {
-                        if (currentLatLng.latitude != tempLocation.latitude && currentLatLng.longitude != tempLocation.longitude) {
-                            Log.e("locationChangeOld", lat + ", " + lng);
-                            lat = location.getLatitude();
-                            lng = location.getLongitude();
-                            Log.e("locationChangeNew", lat + ", " + lng);
-                            currentLatLng = tempLocation;
-                            MarkerOptions uMOpt = new MarkerOptions();
-                            uMOpt.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_user));
-                            uMOpt.position(currentLatLng);
-                            userMarker = mMap.addMarker(uMOpt);
-                            loadWpPosts();
-                            mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLng));
-                            //mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12.0f));
-                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12.0f), new GoogleMap.CancelableCallback() {
-                                @Override
-                                public void onFinish() {
+                Log.e("New Location", location.getLatitude() + " "+ location.getLongitude());
+                LatLng tempLocation = new LatLng(location.getLatitude(), location.getLongitude());
+               /* MarkerOptions uMOpt = new MarkerOptions();
+                uMOpt.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_user));
+                uMOpt.position(tempLocation);
+                userMarker = mMap.addMarker(uMOpt);*/
 
-                                }
-
-                                @Override
-                                public void onCancel() {
-
-                                }
-                            });
-                            Log.e("new Location", lat + ", " + lng);
-                        } else {
-                            Log.e("locationChange", "No change in location");
-                        }
+                lat = location.getLatitude();
+                lng = location.getLongitude();
+               // snackbar.setText("Lat: " + lat + ", Long: " + lng);
+                currentLatLng = new LatLng(lat, lng);
+                userMarker.setPosition(currentLatLng);
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(tempLocation));
+                mMap.animateCamera(CameraUpdateFactory.zoomTo(zoomLevel), 2000, new GoogleMap.CancelableCallback() {
+                    @Override
+                    public void onFinish() {
+                        //startLocationObserver();
+                        //loadWpPosts();
                     }
-                }else{
-                    //Log.e("locationChange", "No change in location" );
-                }
+
+                    @Override
+                    public void onCancel() {
+
+                    }
+                });
+
             }
         });
     }
     @Override
     public void onCameraIdle(){
        // setupMarkers();
+        zoomLevel = mMap.getCameraPosition().zoom;
         loadWpPosts();
     }
 
     @Override
-    public void onCameraMoveStarted(int i) {
-       // Log.e("onCameraMoveStarted", "true");
+    public void onCameraMoveStarted(int reason) {
+        MenuItem item = mMenu.findItem(R.id.center);
+        if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
+            /*Toast.makeText(this, "The user gestured on the map.",
+                    Toast.LENGTH_SHORT).show();*/
+
+            item.setVisible(true);
+        } else if (reason == GoogleMap.OnCameraMoveStartedListener
+                .REASON_API_ANIMATION) {
+            /*Toast.makeText(this, "The user tapped something on the map.",
+                    Toast.LENGTH_SHORT).show();*/
+        } else if (reason == GoogleMap.OnCameraMoveStartedListener
+                .REASON_DEVELOPER_ANIMATION) {
+            /*Toast.makeText(this, "The app moved the camera.",
+                    Toast.LENGTH_SHORT).show();*/
+            item.setVisible(false);
+        }
     }
 
     @Override
@@ -218,6 +233,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
        // googleMap.getUiSettings().setScrollGesturesEnabled(false);
         //googleMap.getUiSettings().setZoomControlsEnabled(true);
        // googleMap.getUiSettings().setZoomGesturesEnabled(false);
+        googleMap.getUiSettings().setCompassEnabled(false);
+        googleMap.getUiSettings().setMyLocationButtonEnabled(false);
         googleMap.getUiSettings().setRotateGesturesEnabled(false);
         mMap = googleMap;
         try {
@@ -230,12 +247,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         uMOpt.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_user));
         uMOpt.position(currentLocation);
         userMarker = mMap.addMarker(uMOpt);
+        //snackbar.setText("Lat: " + lat + ", Long: " + lng);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(12), 2000, new GoogleMap.CancelableCallback() {
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(zoomLevel), 2000, new GoogleMap.CancelableCallback() {
             @Override
             public void onFinish() {
                 startLocationObserver();
-                loadWpPosts();
+               // loadWpPosts();
             }
 
             @Override
@@ -283,7 +301,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             dialog.dismiss();
                         }
                     });
-
+                    dialog.getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
                     dialog.show();
 
                 }
@@ -325,7 +343,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Picasso.get()
                 .load(post.getThumbnail())
                 .resize(50,50)
-                .error(R.drawable.g1)
+                .error(R.drawable.no_image)
                 .fetch(new com.squareup.picasso.Callback(){
                     @Override
                     public void onSuccess(){
@@ -336,6 +354,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         markerLayoutList.add(icon);
                         options.icon(BitmapDescriptorFactory.fromBitmap(icon));
                         Marker marker = mMap.addMarker(options);
+                        ObjectAnimator.ofFloat(marker, "alpha", 0f, 1f).setDuration(500).start();
                         hashMapm.put(Integer.valueOf(post.getId()), marker);
                         hashMapMarker.put(marker.hashCode(),post);
                     }
@@ -346,6 +365,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         markerLayoutList.add(icon);
                         options.icon(BitmapDescriptorFactory.fromBitmap(icon));
                         Marker marker = mMap.addMarker(options);
+                        ObjectAnimator.ofFloat(marker, "alpha", 0f, 1f).setDuration(500).start();
                         hashMapm.put(Integer.valueOf(post.getId()), marker);
                         hashMapMarker.put(marker.hashCode(),post);
                     }
@@ -362,6 +382,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             hashMapMarker.clear();
             hashMapm.clear();
             mMap.clear();
+
             MarkerOptions uMOpt = new MarkerOptions();
             uMOpt.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_user));
             uMOpt.position(currentLatLng);
@@ -371,7 +392,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 final LatLng location = new LatLng(post.getLatitude(), post.getLongitude());
 
                 if(!visibleRegion.latLngBounds.contains(location)) {
-                     calculateIntersection(currentLocation, location, post);
+
+                     calculateIntersection(mMap.getCameraPosition().target, location, post);
 
                 }else{
                     MarkerOptions options = new MarkerOptions();
@@ -380,7 +402,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Picasso.get()
                             .load(post.getThumbnail())
                             .resize(50,50)
-                            .error(R.drawable.g1)
+                            .error(R.drawable.no_image)
                             .fetch(new com.squareup.picasso.Callback(){
                                 @Override
                                 public void onSuccess(){
@@ -391,6 +413,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     markerLayoutList.add(icon);
                                     options.icon(BitmapDescriptorFactory.fromBitmap(icon));
                                     Marker marker = mMap.addMarker(options);
+                                    ObjectAnimator.ofFloat(marker, "alpha", 0f, 1f).setDuration(500).start();
                                     hashMapm.put(Integer.valueOf(post.getId()), marker);
                                     hashMapMarker.put(marker.hashCode(),post);
                                 }
@@ -401,6 +424,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     markerLayoutList.add(icon);
                                     options.icon(BitmapDescriptorFactory.fromBitmap(icon));
                                     Marker marker = mMap.addMarker(options);
+                                    ObjectAnimator.ofFloat(marker, "alpha", 0f, 1f).setDuration(500).start();
                                     hashMapm.put(Integer.valueOf(post.getId()), marker);
                                     hashMapMarker.put(marker.hashCode(),post);
                                 }
@@ -430,12 +454,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .setLoggingEnabled(true);
         Picasso.get()
                 .load(imgPath)
-                .resize(50,50)
-                .error(R.drawable.g1)
+                .resize(55,55)
+                .error(R.drawable.no_image)
                 .into(markerImage);
         DisplayMetrics displayMetrics = new DisplayMetrics();
         ((MainActivity) context).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        marker.setLayoutParams(new ViewGroup.LayoutParams(52, ViewGroup.LayoutParams.WRAP_CONTENT));
+        marker.setLayoutParams(new ViewGroup.LayoutParams(60, ViewGroup.LayoutParams.WRAP_CONTENT));
         marker.measure(displayMetrics.widthPixels, displayMetrics.heightPixels);
         marker.layout(0, 0, displayMetrics.widthPixels, displayMetrics.heightPixels);
         marker.buildDrawingCache();
@@ -465,7 +489,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Picasso.get()
                 .load(imgPath)
                 .resize(50,50)
-                .error(R.drawable.g1)
+                .error(R.drawable.no_image)
                 .into(markerImage);
         DisplayMetrics displayMetrics = new DisplayMetrics();
         ((MainActivity) context).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -532,6 +556,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
+        mMenu = menu;
+        MenuItem item = mMenu.findItem(R.id.center);
+        item.setVisible(false);
         return true;
     }
 
@@ -541,6 +568,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
             startActivity(intent);
+            return true;
+        }
+        if (item.getItemId() == R.id.center) {
+
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat, lng)));
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(zoomLevel), 2000, new GoogleMap.CancelableCallback() {
+                @Override
+                public void onFinish() {
+
+                }
+
+                @Override
+                public void onCancel() {
+
+                }
+            });
             return true;
         }
         return super.onOptionsItemSelected(item);
